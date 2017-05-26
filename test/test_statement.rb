@@ -185,6 +185,19 @@ module SQLite3
       assert_equal [['foo'], ['foo']], r
     end
 
+    def test_reset_doesnt_clear_bindings
+      @db.execute('create table foo(text VARCHAR(10))')
+      stmt = SQLite3::Statement.new(@db, 'insert into foo(text) values (?)')
+      stmt.bind_param(1, 'foo')
+
+      stmt.execute
+      stmt.reset!
+      stmt.execute
+
+      row = @db.execute('select * from foo')
+      assert_equal [['foo'], ['foo']], row
+    end
+
     def test_step
       r = @stmt.step
       assert_equal ['foo'], r
@@ -255,6 +268,15 @@ module SQLite3
       while x = stmt.step
         assert_equal [nil, nil], x
       end
+    end
+
+    def test_clear_bindings_resets_stmt
+      @db.execute('create table foo(text VARCHAR(10))')
+      stmt = SQLite3::Statement.new(@db, 'insert into foo(text) values (?)')
+      stmt.bind_param(1, 'foo')
+      stmt.execute
+      stmt.clear_bindings!
+      assert !stmt.done?
     end
   end
 end
